@@ -9,8 +9,9 @@ from src.data_processing import (
     subsample_words,
     get_target,
     get_batches,
-    cosine_similarity
+    cosine_similarity,
 )
+
 
 @pytest.mark.order(1)
 def test_load_and_preprocess_data():
@@ -22,7 +23,7 @@ def test_load_and_preprocess_data():
 
     if examples is None:
         pytest.skip()
-    
+
     # Then it should return a list of SentimentExample objects
     assert isinstance(examples, list)
     assert all(isinstance(ex, str) for ex in examples)
@@ -30,29 +31,38 @@ def test_load_and_preprocess_data():
     expected_results = ["anarchism", "originated", "as", "a", "term"]
 
     # Validate the first few tokens match expected results
-    assert examples[:len(expected_results)] == expected_results
+    assert examples[: len(expected_results)] == expected_results
+
 
 @pytest.mark.order(2)
 def test_create_lookup_tables():
     # Given a list of sample words
     sample_words = ["hello", "world", "hello", "test"]
-    
+
     # When create_lookup_tables is called
     vocab_to_int, int_to_vocab = create_lookup_tables(sample_words)
-    
+
     if vocab_to_int is None or int_to_vocab is None:
         pytest.skip()
-    
+
     # Then it should create accurate dictionaries for word to int and int to word mappings
     assert len(vocab_to_int) == len(int_to_vocab) == len(set(sample_words))
     assert all(word in vocab_to_int for word in sample_words)
     assert all(int_to_vocab[vocab_to_int[word]] == word for word in sample_words)
-    assert all(isinstance(key, str) and isinstance(value, int) for key, value in vocab_to_int.items())
-    assert all(isinstance(key, int) and isinstance(value, str) for key, value in int_to_vocab.items())
+    assert all(
+        isinstance(key, str) and isinstance(value, int)
+        for key, value in vocab_to_int.items()
+    )
+    assert all(
+        isinstance(key, int) and isinstance(value, str)
+        for key, value in int_to_vocab.items()
+    )
+
 
 @pytest.fixture
 def vocab_to_int():
     return {"apple": 0, "banana": 1, "cherry": 2, "date": 3}
+
 
 @pytest.mark.order(3)
 def test_subsample_words(vocab_to_int):
@@ -61,24 +71,39 @@ def test_subsample_words(vocab_to_int):
 
     if train_words is None or freqs is None:
         pytest.skip()
-    
+
     assert isinstance(train_words, list)
     assert isinstance(freqs, dict)
-    assert len(train_words) <= len(words)  # Train words should be less or equal to input words
+    assert len(train_words) <= len(
+        words
+    )  # Train words should be less or equal to input words
 
     words = []
     train_words, freqs = subsample_words(words, vocab_to_int)
-    
+
     assert isinstance(train_words, list)
     assert isinstance(freqs, dict)
     assert len(train_words) == 0  # Empty input should result in empty train words list
 
-    words = ["apple", "apple", "apple", "banana", "banana", "cherry", "date", "date", "date", "date"]
+    words = [
+        "apple",
+        "apple",
+        "apple",
+        "banana",
+        "banana",
+        "cherry",
+        "date",
+        "date",
+        "date",
+        "date",
+    ]
     train_words, freqs = subsample_words(words, vocab_to_int, threshold=0.5)
-    
+
     assert isinstance(train_words, list)
     assert isinstance(freqs, dict)
-    assert len(train_words) <= len(words)  # Train words should be less or equal to input words
+    assert len(train_words) <= len(
+        words
+    )  # Train words should be less or equal to input words
 
 
 @pytest.mark.order(4)
@@ -97,7 +122,9 @@ def test_get_target():
     # Then the context words should be within the window around the index
     # For window_size=2, expected words around "jumps" are ["brown", "fox", "over", "the"]
     expected_words = ["brown", "fox", "over", "the"]
-    assert set(context_words).issubset(set(expected_words)), "The context words are not correctly selected within the window."
+    assert set(context_words).issubset(
+        set(expected_words)
+    ), "The context words are not correctly selected within the window."
 
 
 @pytest.mark.order(5)
@@ -120,10 +147,14 @@ def test_get_batches():
     inputs, targets = batches[0]
     assert len(inputs) > 0, "Inputs of the first batch are empty."
     assert len(targets) > 0, "Targets of the first batch are empty."
-    assert len(inputs) == len(targets), "Inputs and targets of the first batch do not match in length."
+    assert len(inputs) == len(
+        targets
+    ), "Inputs and targets of the first batch do not match in length."
 
     # Additional checks can be made for the contents of inputs and targets
     # to ensure context windows are correctly implemented.
+
+
 @pytest.mark.order(6)
 def test_cosine_similarity():
     # Create a simple embedding matrix for testing: 1000 embeddings of size 10
@@ -134,12 +165,20 @@ def test_cosine_similarity():
     # Call the cosine_similarity function
     valid_size = 16  # Number of validation examples
     valid_window = 100  # Window of validation examples
-    valid_examples, similarities = cosine_similarity(embedding, valid_size=valid_size, valid_window=valid_window, device='cpu')
+    valid_examples, similarities = cosine_similarity(
+        embedding, valid_size=valid_size, valid_window=valid_window, device="cpu"
+    )
 
     if valid_examples is None or similarities is None:
         pytest.skip()
 
     # Check the shape of the output tensors
-    assert valid_examples.shape[0] == valid_size, "The number of valid examples should match the requested valid_size."
-    assert similarities.shape[0] == valid_size, "The similarities tensor should have one row per valid example."
-    assert similarities.shape[1] == num_embeddings, "The similarities tensor should have one column per embedding."
+    assert (
+        valid_examples.shape[0] == valid_size
+    ), "The number of valid examples should match the requested valid_size."
+    assert (
+        similarities.shape[0] == valid_size
+    ), "The similarities tensor should have one row per valid example."
+    assert (
+        similarities.shape[1] == num_embeddings
+    ), "The similarities tensor should have one column per embedding."
